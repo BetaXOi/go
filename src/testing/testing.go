@@ -996,6 +996,7 @@ type M struct {
 	afterOnce sync.Once
 
 	numRun int
+	savedTestlogFile *os.File
 }
 
 // testDeps is an internal interface of functionality that is
@@ -1212,6 +1213,10 @@ func (m *M) before() {
 			os.Exit(2)
 		}
 		m.deps.StartTestLog(f)
+
+		if testlogFile != nil {
+			m.savedTestlogFile = testlogFile
+		}
 		testlogFile = f
 	}
 }
@@ -1232,6 +1237,11 @@ func (m *M) writeProfiles() {
 		if err := testlogFile.Close(); err != nil {
 			fmt.Fprintf(os.Stderr, "testing: can't write %s: %s\n", *testlog, err)
 			os.Exit(2)
+		}
+
+		if m.savedTestlogFile != nil {
+			testlogFile = m.savedTestlogFile
+			m.savedTestlogFile = nil
 		}
 	}
 	if *cpuProfile != "" {
